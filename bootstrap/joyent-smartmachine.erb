@@ -1,0 +1,50 @@
+# Joyent SmartMachine Knife Bootstrap
+# Copy this file to: ~/.chef/bootstrap/joyent-smartmachine.erb
+# To use via Knife: knife bootstrap <hostname|ip> -d joyent-smartmachine [-r recipe1,recipe2,...] [-N nodename] 
+
+bash -c '
+<%= "export http_proxy=\"#{knife_config[:bootstrap_proxy]}\"" if knife_config[:bootstrap_proxy] -%>
+
+if [ ! -f /opt/local/bin/chef-client ]; then
+  pkgin -f update
+  pkgin -y install gcc47 gcc47-runtime scmgit-base gmake ruby193-base ruby193-yajl-ruby ruby193-nokogiri ruby193-readline pkg-config
+  gem update --system
+
+  gem install --no-ri --no-rdoc ohai
+  gem install --no-ri --no-rdoc chef <%= bootstrap_version_string %>
+  gem install --no-ri --no-rdoc rb-readline
+fi
+
+mkdir -p /etc/chef
+
+(
+cat <<'EOP'
+<%= validation_key %>
+EOP
+) > /tmp/validation.pem
+awk NF /tmp/validation.pem > /etc/chef/validation.pem
+rm /tmp/validation.pem
+
+<% if @chef_config[:encrypted_data_bag_secret] -%>
+(
+cat <<'EOP'
+<%= encrypted_data_bag_secret %>
+EOP
+) > /tmp/encrypted_data_bag_secret
+/usr/xpg4/bin/awk NF /tmp/encrypted_data_bag_secret > /var/chef/encrypted_data_bag_secret
+rm /tmp/encrypted_data_bag_secret
+<% end -%>
+
+(
+cat <<'EOP'
+<%= config_content %>
+EOP
+) > /etc/chef/client.rb
+
+(
+cat <<'EOP'
+<%= { "run_list" => @run_list }.to_json %>
+EOP
+) > /etc/chef/first-boot.json
+
+<%= start_chef %>'
