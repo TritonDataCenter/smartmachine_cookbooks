@@ -1,18 +1,21 @@
 # Joyent SmartMachine Knife Bootstrap
 # Copy this file to: ~/.chef/bootstrap/joyent-smartmachine.erb
-# To use via Knife: knife bootstrap <hostname|ip> -d joyent-smartmachine [-r recipe1,recipe2,...] [-N nodename] 
+# To use via Knife: knife bootstrap <hostname|ip> -d joyent-smartmachine [-r recipe1,recipe2,...] [-N nodename]
 
 bash -c '
 <%= "export http_proxy=\"#{knife_config[:bootstrap_proxy]}\"" if knife_config[:bootstrap_proxy] -%>
 
 if [ ! -f /opt/local/bin/chef-client ]; then
-  pkgin -f update
-  pkgin -y install gcc47 gcc47-runtime scmgit-base gmake ruby193-base ruby193-yajl-ruby ruby193-nokogiri ruby193-readline pkg-config
+  pkgin -fy update
+  pkgin -y install gcc47 gcc47-runtime scmgit-base gmake ruby193-base ruby193-yajl ruby193-nokogiri ruby193-readline pkg-config
   gem update --system
 
-  gem install --no-ri --no-rdoc ohai
-  gem install --no-ri --no-rdoc chef <%= bootstrap_version_string %>
-  gem install --no-ri --no-rdoc rb-readline
+  gem install --no-ri --no-rdoc ohai && \
+  gem install --no-ri --no-rdoc chef <%= bootstrap_version_string %> && \
+  gem install --no-ri --no-rdoc rb-readline && \
+  wget --no-check-certificate -O /tmp/provider_package.rb https://raw.github.com/someara/pkgin-cookbook/master/libraries/provider_package.rb && \
+  cat /tmp/provider_package.rb| sed -e "s/class Pkgin/class SmartOS/" >/opt/local/lib/ruby/gems/1.9.3/gems/chef-10.14.4/lib/chef/provider/package/smartos.rb && rm /tmp/provider_package.rb
+
 fi
 
 mkdir -p /etc/chef
@@ -22,7 +25,7 @@ cat <<'EOP'
 <%= validation_key %>
 EOP
 ) > /tmp/validation.pem
-awk NF /tmp/validation.pem > /etc/chef/validation.pem
+/usr/xpg4/bin/awk NF /tmp/validation.pem > /etc/chef/validation.pem
 rm /tmp/validation.pem
 
 <% if @chef_config[:encrypted_data_bag_secret] -%>
