@@ -22,7 +22,7 @@ cat <<'EOP'
 <%= validation_key %>
 EOP
 ) > /tmp/validation.pem
-awk NF /tmp/validation.pem > /etc/chef/validation.pem
+/usr/xpg4/bin/awk NF /tmp/validation.pem > /etc/chef/validation.pem
 rm /tmp/validation.pem
 
 <% if @chef_config[:encrypted_data_bag_secret] -%>
