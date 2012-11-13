@@ -8,6 +8,7 @@ bash -c '
 if [ ! -f /opt/local/bin/chef-client ]; then
   pkgin -f update
   pkgin -y install gcc47 gcc47-runtime scmgit-base gmake ruby193-base ruby193-yajl ruby193-nokogiri ruby193-readline pkg-config
+  export PATH=/opt/local/gnu/bin:/opt/local/bin:/opt/local/sbin:/usr/bin:/usr/sbin
   gem update --system
 
   gem install --no-ri --no-rdoc ohai
